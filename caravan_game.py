@@ -1,18 +1,26 @@
 import caravan as cr
+import agents
 
 cards_in_hand = 5
 moves = ("play_card", "discard")
 winning_min = 21
 winning_max = 26
+time_limit = 10
+
+agents = {
+    "human": agents.human_agent,
+    "greedy": agents.greedy_agent,
+}
 
 class Player:
-    def __init__(self):
+    def __init__(self, agent_str):
         self.deck = cr.Deck()
         self.caravans = []
         for i in range(1,4):
             caravan = cr.Caravan()
             self.caravans.append(caravan)
         self.hand = []
+        self.turn_func = agents[agent_str]
     
     def print_hand(self):
         myList = []
@@ -22,10 +30,10 @@ class Player:
             
 
 class Game:
-    def __init__(self):
+    def __init__(self, agent_1_str, agent_2_str):
         self.win = False
-        player1 = Player()
-        player2 = Player()
+        player1 = Player(agent_1_str)
+        player2 = Player(agent_2_str)
         self.players = []
         self.players.append(player1)
         self.players.append(player2)
@@ -51,42 +59,8 @@ class Game:
         else:
             return
         print("Player ", player_num + 1)
-        player.print_hand()
-        action_str = str(input("Play or discard (p/d): "))
-        if action_str == "p":
-            action = moves[0]
-        elif action_str == "d":
-            action = moves[1]
-        else:
-            return
-        if action == moves[1]:
-            card_index = int(input("Choose card: "))
-            while card_index < 0 or card_index > len(player.hand):
-                card_index = int(input("Choose card: "))
-            player.hand.pop(card_index)
-            legal_move = True
-            return
+        player.turn_func(self, player_num, time_limit)
 
-        card_index = int(input("Choose card: "))
-        while card_index < 0 or card_index > len(player.hand):
-            card_index = int(input("Choose card: "))
-        caravan_num = int(input("Choose caravan: "))
-        while caravan_num < 0 or caravan_num > 2:
-            caravan_num = int(input("Choose caravan: "))
-        card = player.hand[card_index]
-        if card.is_number_card():
-            legal_move = self.is_legal_move(card, player.caravans[caravan_num])
-            if legal_move:
-                player.caravans[caravan_num].add_card(card)
-            else:
-                return
-        else:
-            index = int(input("Choose index in caravan: "))
-            while index < 0 or index >= len(player.caravans[caravan_num]):
-                index = int(input("Choose index in caravan: "))
-                legal_move = self.is_legal_move(card, player.caravans[caravan_num], index)
-            player.caravans[caravan_num].add_card(card, index)
-        player.hand.pop(card_index)
         return self.check_winner()
     
     def is_legal_move(self, card, caravan, index = None):
